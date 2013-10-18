@@ -41,6 +41,11 @@ class LogStash::Filters::CSV < LogStash::Filters::Base
   # Optional.
   config :separator, :validate => :string, :default => ","
 
+  # Define the character used to quote CSV fields. If this is not specified
+  # the default is a double quote '"'
+  # Optional.
+  config :quote_char, :validate => :string, :default => '"'
+
   # Define target for placing the data
   # Defaults to @fields
   # Optional
@@ -60,7 +65,7 @@ class LogStash::Filters::CSV < LogStash::Filters::Base
     @csv = {}
     #TODO(electrical): At some point this can be removed
     @config.each do |field, dest|
-      next if (RESERVED + ["fields", "separator", "source", "columns", "target"]).member?(field)
+      next if (RESERVED + ["fields", "separator", "source", "columns", "target", "quote_char"]).member?(field)
       @logger.warn("#{self.class.config_name}: You used a deprecated setting '#{field} => #{dest}'. You should use 'source => \"#{field}\"' and 'target => \"#{dest}\"'")
       @csv[field] = dest
     end
@@ -100,7 +105,7 @@ class LogStash::Filters::CSV < LogStash::Filters::Base
 
         raw = event[key].first
         begin
-          values = CSV.parse_line(raw, {:col_sep => @separator})
+          values = CSV.parse_line(raw, {:col_sep => @separator, :quote_char => @quote_char})
           data = {}
           values.each_index do |i|
             field_name = @columns[i] || "column#{i+1}"
